@@ -57,7 +57,7 @@ export default function Home() {
               content: prompt,
             },
           ],
-          temperature: 0.7,
+          temperature: 1,
           stream: false,
         }),
       });
