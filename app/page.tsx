@@ -1,33 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ApiKeyModal } from "@/components/api-key-modal";
-import { Settings, Sparkles } from "lucide-react";
-import { resumeAnalysisPrompt } from "@/lib/prompt";
+import { useState } from "react";
+import { Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 export default function Home() {
   const [jd, setJd] = useState("");
   const [resume, setResume] = useState("");
-  const [apiKey, setApiKey] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [result, setResult] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // 初始化时加载 API Key - 修正：使用 useEffect 而非 useState
-  useEffect(() => {
-    const savedKey = localStorage.getItem("kimi_api_key") || "";
-    setApiKey(savedKey);
-  }, []);
-
   const handleAnalyze = async () => {
-    if (!apiKey) {
-      setError("请先配置 Kimi API Key");
-      setIsModalOpen(true);
-      return;
-    }
-
     if (!jd.trim() || !resume.trim()) {
       setError("请输入 JD 和简历内容");
       return;
@@ -38,39 +22,19 @@ export default function Home() {
     setResult("");
 
     try {
-      const prompt = resumeAnalysisPrompt(jd, resume);
-      const response = await fetch("https://api.moonshot.cn/v1/chat/completions", {
+      const response = await fetch("/api/analyze", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: "kimi-k2.5",
-          messages: [
-            {
-              role: "system",
-              content: "你是一个资深互联网 HR 和产品总监，擅长分析产品经理简历与 JD 的匹配度，并给出专业优化建议。",
-            },
-            {
-              role: "user",
-              content: prompt,
-            },
-          ],
-          temperature: 1,
-          stream: false,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jd, resume }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error?.message || `API 请求失败: ${response.status} ${response.statusText}`
-        );
+        throw new Error(errorData.error || `请求失败: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
-      const content = data.choices[0]?.message?.content || "无法获取分析结果";
+      const content = data.content || "无法获取分析结果";
       setResult(content);
       setError("");
     } catch (err) {
@@ -86,7 +50,7 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* 头部 */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
               产品经理简历优化器
@@ -95,13 +59,6 @@ export default function Home() {
               使用 AI 分析 JD 与简历匹配度，获得专业优化建议
             </p>
           </div>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow"
-          >
-            <Settings className="w-5 h-5" />
-            <span>配置 API Key</span>
-          </button>
         </div>
 
         {/* 输入区域 */}
@@ -191,13 +148,6 @@ export default function Home() {
             </div>
           </div>
         )}
-
-        {/* API Key 弹窗 */}
-        <ApiKeyModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSave={(key) => setApiKey(key)}
-        />
       </div>
     </div>
   );
