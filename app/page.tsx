@@ -7,7 +7,7 @@ import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import { ScoreCard } from "@/components/score-card";
 import { Tabs } from "@/components/tabs";
-import { LoadingSkeleton } from "@/components/loading-skeleton";
+import { AnalysisLoading } from "@/components/analysis-loading";
 import { Toast } from "@/components/toast";
 import { resumeAnalysisPrompt } from "@/lib/prompt";
 
@@ -219,7 +219,7 @@ export default function Home() {
         </div>
 
         {/* Results */}
-        {isLoading && <LoadingSkeleton />}
+        {isLoading && <AnalysisLoading />}
 
         {result && !isLoading && (
           <div className="animate-fade-in">
