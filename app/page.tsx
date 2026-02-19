@@ -46,7 +46,7 @@ export default function Home() {
       }
 
       const data = await response.json();
-      setResult(data.result);
+      setResult(data.content);
       setToast({ message: "分析完成!", type: "success" });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "分析失败,请重试";
