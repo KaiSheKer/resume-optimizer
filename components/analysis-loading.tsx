@@ -15,6 +15,24 @@ export function AnalysisLoading() {
     "Offer 在路上..."
   ];
 
+  // 自动推进进度
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) return 100;
+        return prev + 2; // 每 50ms 增加 2%, 约 2.5秒到达 100%
+      });
+    }, 50);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // 根据进度切换文案
+  useEffect(() => {
+    const stepIndex = Math.min(Math.floor(progress / 20), 4);
+    setCurrentStep(stepIndex);
+  }, [progress]);
+
   return (
     <div className="flex flex-col items-center justify-center py-16 animate-fade-in">
       {/* 进度条容器 */}
