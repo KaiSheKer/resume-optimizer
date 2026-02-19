@@ -48,15 +48,23 @@
 }
 
 .prose table {
-  @apply w-full border-collapse mb-4;
+  @apply w-full border-collapse mb-6 rounded-lg overflow-hidden shadow-sm;
 }
 
 .prose table th {
-  @apply bg-[#F3F3F2] dark:bg-gray-800 px-4 py-2 text-left font-semibold border border-[#E8E8E6] dark:border-gray-700;
+  @apply bg-claude-surface-elevated dark:bg-gray-800 px-4 py-3 text-left font-semibold text-claude-text-primary dark:text-white border border-claude-border dark:border-gray-700 text-sm;
 }
 
 .prose table td {
-  @apply px-4 py-2 border border-[#E8E8E6] dark:border-gray-700;
+  @apply px-4 py-3 border border-claude-border dark:border-gray-700 text-claude-text-secondary dark:text-gray-300 text-sm;
+}
+
+.prose table tr:hover {
+  @apply bg-[#F9F9F8] dark:bg-gray-800/50;
+}
+
+.prose table tr:nth-child(even) {
+  @apply bg-[#FAFAFA] dark:bg-gray-900/30;
 }
 
 .prose blockquote {
