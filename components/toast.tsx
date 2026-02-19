@@ -51,9 +51,9 @@ export function Toast({ message, type = "info", duration = 2000, onClose }: Toas
     const base = "fixed bottom-8 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 transition-all duration-200";
 
     const typeStyles = {
-      success: "bg-[#5B8C5A] text-white",
-      error: "bg-[#C53030] text-white",
-      info: "bg-[#0B7285] text-white",
+      success: "bg-claude-success text-white",
+      error: "bg-claude-danger text-white",
+      info: "bg-claude-info text-white",
     };
 
     const animation = isVisible

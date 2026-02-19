@@ -42,26 +42,26 @@ export function ScoreCard({ score, label, delay = 0 }: ScoreCardProps) {
   }, [score, isVisible]);
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-[#5B8C5A]";
-    if (score >= 60) return "text-[#D97706]";
-    return "text-[#C53030]";
+    if (score >= 80) return "text-claude-success";
+    if (score >= 60) return "text-claude-warning";
+    return "text-claude-danger";
   };
 
   const getProgressColor = (score: number) => {
-    if (score >= 80) return "#5B8C5A";
-    if (score >= 60) return "#D97706";
-    return "#C53030";
+    if (score >= 80) return "var(--tw-claude-success)";
+    if (score >= 60) return "var(--tw-claude-warning)";
+    return "var(--tw-claude-danger)";
   };
 
   return (
     <div
-      className={`bg-white dark:bg-gray-800 rounded-lg p-6 border border-[#E8E8E6] dark:border-gray-700 transition-all duration-300 ${
+      className={`bg-white dark:bg-gray-800 rounded-lg p-6 border border-claude-border dark:border-gray-700 transition-all duration-300 ${
         isVisible ? "animate-scale-in opacity-100" : "opacity-0"
       }`}
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium text-[#585858] dark:text-gray-400">
+        <span className="text-sm font-medium text-claude-text-secondary dark:text-gray-400">
           {label}
         </span>
         <span
@@ -70,7 +70,7 @@ export function ScoreCard({ score, label, delay = 0 }: ScoreCardProps) {
           {displayScore}
         </span>
       </div>
-      <div className="w-full bg-[#F3F3F2] dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+      <div className="w-full bg-claude-surface-elevated dark:bg-gray-700 rounded-full h-2 overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-800 ease-out"
           style={{

@@ -83,21 +83,21 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F9F9F8] dark:bg-gray-900">
+    <div className="min-h-screen bg-claude-bg dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
         <div className="flex justify-between items-center mb-8 animate-slide-down">
           <div>
-            <h1 className="text-3xl font-bold text-[#1A1A1A] dark:text-white mb-2">
+            <h1 className="text-3xl font-bold text-claude-text-primary dark:text-white mb-2">
               简历优化器
             </h1>
-            <p className="text-[#585858] dark:text-gray-400">
+            <p className="text-claude-text-secondary dark:text-gray-400">
               使用 AI 分析 JD 与简历匹配度,获得专业优化建议
             </p>
           </div>
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-all border border-[#E8E8E6] dark:border-gray-700 hover:scale-105"
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-all border border-claude-border dark:border-gray-700 hover:scale-105"
           >
             <Download className="w-5 h-5" />
             <span>导出</span>
@@ -108,11 +108,11 @@ export default function Home() {
         <div className="grid md:grid-cols-2 gap-6 mb-6">
           {/* JD Input */}
           <div
-            className={`bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-[#E8E8E6] dark:border-gray-700 transition-all duration-300 animate-slide-up`}
+            className={`bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-claude-border dark:border-gray-700 transition-all duration-300 animate-slide-up`}
             style={{ animationDelay: "50ms" }}
           >
             <div className="flex justify-between items-center mb-3">
-              <label className="block text-sm font-medium text-[#1A1A1A] dark:text-white">
+              <label className="block text-sm font-medium text-claude-text-primary dark:text-white">
                 JD 职位描述
               </label>
               <div className="flex gap-2">
@@ -121,13 +121,13 @@ export default function Home() {
                     navigator.clipboard.readText().then(setJd);
                     setToast({ message: "已粘贴", type: "success" });
                   }}
-                  className="text-xs px-2 py-1 text-[#585858] hover:text-[#D97757] hover:bg-[#F3F3F2] rounded transition-colors"
+                  className="text-xs px-2 py-1 text-claude-text-secondary hover:text-claude-orange hover:bg-claude-surface-elevated rounded transition-colors"
                 >
                   粘贴
                 </button>
                 <button
                   onClick={() => setJd("")}
-                  className="text-xs px-2 py-1 text-[#585858] hover:text-[#C53030] hover:bg-[#F3F3F2] rounded transition-colors"
+                  className="text-xs px-2 py-1 text-claude-text-secondary hover:text-claude-danger hover:bg-claude-surface-elevated rounded transition-colors"
                 >
                   清空
                 </button>
@@ -137,9 +137,9 @@ export default function Home() {
               value={jd}
               onChange={(e) => setJd(e.target.value)}
               placeholder="粘贴目标岗位的 JD 内容..."
-              className="w-full h-64 px-4 py-3 border border-[#E8E8E6] dark:border-gray-700 rounded-md focus:outline-none focus:border-[#D97757] focus:ring-2 focus:ring-[#D97757]/20 resize-none bg-white dark:bg-gray-800 transition-all duration-200"
+              className="w-full h-64 px-4 py-3 border border-claude-border dark:border-gray-700 rounded-md focus:outline-none focus:border-claude-orange focus:ring-2 focus:ring-claude-orange/20 resize-none bg-white dark:bg-gray-800 transition-all duration-200"
             />
-            <div className="flex justify-between mt-2 text-xs text-[#9A9A9A]">
+            <div className="flex justify-between mt-2 text-xs text-claude-text-tertiary">
               <span>建议包含完整的职位描述、职责要求、技能要求等</span>
               <span>{jd.length} / 10000</span>
             </div>
@@ -147,11 +147,11 @@ export default function Home() {
 
           {/* Resume Input */}
           <div
-            className={`bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-[#E8E8E6] dark:border-gray-700 transition-all duration-300 animate-slide-up`}
+            className={`bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-claude-border dark:border-gray-700 transition-all duration-300 animate-slide-up`}
             style={{ animationDelay: "100ms" }}
           >
             <div className="flex justify-between items-center mb-3">
-              <label className="block text-sm font-medium text-[#1A1A1A] dark:text-white">
+              <label className="block text-sm font-medium text-claude-text-primary dark:text-white">
                 你的简历内容
               </label>
               <div className="flex gap-2">
@@ -160,13 +160,13 @@ export default function Home() {
                     navigator.clipboard.readText().then(setResume);
                     setToast({ message: "已粘贴", type: "success" });
                   }}
-                  className="text-xs px-2 py-1 text-[#585858] hover:text-[#D97757] hover:bg-[#F3F3F2] rounded transition-colors"
+                  className="text-xs px-2 py-1 text-claude-text-secondary hover:text-claude-orange hover:bg-claude-surface-elevated rounded transition-colors"
                 >
                   粘贴
                 </button>
                 <button
                   onClick={() => setResume("")}
-                  className="text-xs px-2 py-1 text-[#585858] hover:text-[#C53030] hover:bg-[#F3F3F2] rounded transition-colors"
+                  className="text-xs px-2 py-1 text-claude-text-secondary hover:text-claude-danger hover:bg-claude-surface-elevated rounded transition-colors"
                 >
                   清空
                 </button>
@@ -176,9 +176,9 @@ export default function Home() {
               value={resume}
               onChange={(e) => setResume(e.target.value)}
               placeholder="粘贴你的简历内容..."
-              className="w-full h-64 px-4 py-3 border border-[#E8E8E6] dark:border-gray-700 rounded-md focus:outline-none focus:border-[#D97757] focus:ring-2 focus:ring-[#D97757]/20 resize-none bg-white dark:bg-gray-800 transition-all duration-200"
+              className="w-full h-64 px-4 py-3 border border-claude-border dark:border-gray-700 rounded-md focus:outline-none focus:border-claude-orange focus:ring-2 focus:ring-claude-orange/20 resize-none bg-white dark:bg-gray-800 transition-all duration-200"
             />
-            <div className="flex justify-between mt-2 text-xs text-[#9A9A9A]">
+            <div className="flex justify-between mt-2 text-xs text-claude-text-tertiary">
               <span>建议包含个人总结、工作经历、项目经验、技能等完整内容</span>
               <span>{resume.length} / 10000</span>
             </div>
@@ -187,8 +187,8 @@ export default function Home() {
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-[#C53030]/10 border border-[#C53030] rounded-md animate-shake">
-            <p className="text-[#C53030] text-sm">{error}</p>
+          <div className="mb-6 p-4 bg-claude-danger/10 border border-claude-danger rounded-md animate-shake">
+            <p className="text-claude-danger text-sm">{error}</p>
           </div>
         )}
 
@@ -197,7 +197,7 @@ export default function Home() {
           <button
             onClick={handleAnalyze}
             disabled={isLoading}
-            className={`flex items-center gap-2 px-8 py-3 bg-[#D97757] text-white rounded-lg hover:bg-[#C26647] disabled:bg-[#9A9A9A] disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg ${
+            className={`flex items-center gap-2 px-8 py-3 bg-claude-orange text-white rounded-lg hover:bg-claude-orange-dark disabled:bg-claude-text-tertiary disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg ${
               !isLoading ? "hover:scale-105 active:scale-95" : ""
             }`}
           >
@@ -213,7 +213,7 @@ export default function Home() {
           <div className="animate-fade-in">
             <Tabs tabs={tabs} defaultTab="overview">
               {(activeTab) => (
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 border border-[#E8E8E6] dark:border-gray-700">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 border border-claude-border dark:border-gray-700">
                   <div className="prose prose-blue dark:prose-invert max-w-none">
                     <ReactMarkdown>{result}</ReactMarkdown>
                   </div>

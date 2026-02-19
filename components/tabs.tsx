@@ -42,7 +42,7 @@ export function Tabs({ tabs, defaultTab, onChange, children }: TabsProps) {
   return (
     <div className="w-full">
       {/* Tab Headers */}
-      <div className="relative border-b border-[#E8E8E6] dark:border-gray-700">
+      <div className="relative border-b border-claude-border dark:border-gray-700">
         <div className="flex space-x-8">
           {tabs.map((tab, index) => (
             <button
@@ -51,8 +51,8 @@ export function Tabs({ tabs, defaultTab, onChange, children }: TabsProps) {
               onClick={() => handleTabChange(tab.id)}
               className={`relative pb-3 px-1 text-sm font-medium transition-colors duration-200 ${
                 activeTab === tab.id
-                  ? "text-[#1A1A1A] dark:text-white"
-                  : "text-[#585858] dark:text-gray-400 hover:text-[#1A1A1A] dark:hover:text-white"
+                  ? "text-claude-text-primary dark:text-white"
+                  : "text-claude-text-secondary dark:text-gray-400 hover:text-claude-text-primary dark:hover:text-white"
               }`}
             >
               {tab.label}
@@ -61,7 +61,7 @@ export function Tabs({ tabs, defaultTab, onChange, children }: TabsProps) {
         </div>
         {/* Indicator */}
         <div
-          className="absolute bottom-0 h-0.5 bg-[#D97757] transition-all duration-300 ease-in-out"
+          className="absolute bottom-0 h-0.5 bg-claude-orange transition-all duration-300 ease-in-out"
           style={{
             left: `${indicatorStyle.left}px`,
             width: `${indicatorStyle.width}px`,
