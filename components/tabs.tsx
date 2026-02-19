@@ -47,7 +47,7 @@ export function Tabs({ tabs, defaultTab, onChange, children }: TabsProps) {
           {tabs.map((tab, index) => (
             <button
               key={tab.id}
-              ref={(el) => (tabRefs.current[index] = el)}
+              ref={(el) => { tabRefs.current[index] = el; }}
               onClick={() => handleTabChange(tab.id)}
               className={`relative pb-3 px-1 text-sm font-medium transition-colors duration-200 ${
                 activeTab === tab.id
