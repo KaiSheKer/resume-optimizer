@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Sparkles, Download } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 import { ScoreCard } from "@/components/score-card";
 import { Tabs } from "@/components/tabs";
 import { LoadingSkeleton } from "@/components/loading-skeleton";
@@ -21,17 +23,23 @@ export default function Home() {
   } | null>(null);
 
   const handleAnalyze = async () => {
+    console.log("handleAnalyze 被调用");
+    console.log("JD 长度:", jd.length, "简历长度:", resume.length);
+
     if (!jd.trim() || !resume.trim()) {
+      console.log("验证失败: JD 或简历为空");
       setError("请输入 JD 和简历内容");
       setToast({ message: "请输入 JD 和简历内容", type: "error" });
       return;
     }
 
+    console.log("开始加载...");
     setIsLoading(true);
     setError("");
     setResult("");
 
     try {
+      console.log("发送 API 请求...");
       const prompt = resumeAnalysisPrompt(jd, resume);
       const response = await fetch("/api/analyze", {
         method: "POST",
@@ -41,18 +49,22 @@ export default function Home() {
         body: JSON.stringify({ jd, resume }),
       });
 
+      console.log("收到响应:", response.status);
       if (!response.ok) {
         throw new Error(`API 请求失败: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log("数据长度:", data.content?.length);
       setResult(data.content);
       setToast({ message: "分析完成!", type: "success" });
     } catch (err) {
+      console.error("错误:", err);
       const errorMessage = err instanceof Error ? err.message : "分析失败,请重试";
       setError(errorMessage);
       setToast({ message: errorMessage, type: "error" });
     } finally {
+      console.log("请求完成");
       setIsLoading(false);
     }
   };
@@ -215,7 +227,12 @@ export default function Home() {
               {(activeTab) => (
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 border border-claude-border dark:border-gray-700">
                   <div className="prose prose-blue dark:prose-invert max-w-none">
-                    <ReactMarkdown>{result}</ReactMarkdown>
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
+                    >
+                      {result}
+                    </ReactMarkdown>
                   </div>
                 </div>
               )}
