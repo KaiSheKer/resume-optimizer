@@ -1,8 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Download } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { ScoreCard } from "@/components/score-card";
+import { Tabs } from "@/components/tabs";
+import { LoadingSkeleton } from "@/components/loading-skeleton";
+import { Toast } from "@/components/toast";
+import { resumeAnalysisPrompt } from "@/lib/prompt";
 
 export default function Home() {
   const [jd, setJd] = useState("");
@@ -10,10 +15,15 @@ export default function Home() {
   const [result, setResult] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error" | "info";
+  } | null>(null);
 
   const handleAnalyze = async () => {
     if (!jd.trim() || !resume.trim()) {
       setError("请输入 JD 和简历内容");
+      setToast({ message: "请输入 JD 和简历内容", type: "error" });
       return;
     }
 
@@ -22,131 +32,204 @@ export default function Home() {
     setResult("");
 
     try {
+      const prompt = resumeAnalysisPrompt(jd, resume);
       const response = await fetch("/api/analyze", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ jd, resume }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `请求失败: ${response.status} ${response.statusText}`);
+        throw new Error(`API 请求失败: ${response.status}`);
       }
 
       const data = await response.json();
-      const content = data.content || "无法获取分析结果";
-      setResult(content);
-      setError("");
+      setResult(data.result);
+      setToast({ message: "分析完成!", type: "success" });
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "分析失败，请重试";
+      const errorMessage = err instanceof Error ? err.message : "分析失败,请重试";
       setError(errorMessage);
-      console.error("分析错误:", err);
+      setToast({ message: errorMessage, type: "error" });
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleExport = () => {
+    if (!result) {
+      setToast({ message: "请先进行分析", type: "info" });
+      return;
+    }
+
+    const blob = new Blob([result], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "简历分析结果.md";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    setToast({ message: "导出成功!", type: "success" });
+  };
+
+  const tabs = [
+    { id: "overview", label: "概览" },
+    { id: "analysis", label: "详细分析" },
+    { id: "suggestions", label: "优化建议" },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-[#F9F9F8] dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* 头部 */}
-        <div className="mb-8">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8 animate-slide-down">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              产品经理简历优化器
+            <h1 className="text-3xl font-bold text-[#1A1A1A] dark:text-white mb-2">
+              简历优化器
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              使用 AI 分析 JD 与简历匹配度，获得专业优化建议
+            <p className="text-[#585858] dark:text-gray-400">
+              使用 AI 分析 JD 与简历匹配度,获得专业优化建议
             </p>
           </div>
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-all border border-[#E8E8E6] dark:border-gray-700 hover:scale-105"
+          >
+            <Download className="w-5 h-5" />
+            <span>导出</span>
+          </button>
         </div>
 
-        {/* 输入区域 */}
+        {/* Input Areas */}
         <div className="grid md:grid-cols-2 gap-6 mb-6">
-          {/* JD 输入框 */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              JD 职位描述
-            </label>
+          {/* JD Input */}
+          <div
+            className={`bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-[#E8E8E6] dark:border-gray-700 transition-all duration-300 animate-slide-up`}
+            style={{ animationDelay: "50ms" }}
+          >
+            <div className="flex justify-between items-center mb-3">
+              <label className="block text-sm font-medium text-[#1A1A1A] dark:text-white">
+                JD 职位描述
+              </label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.readText().then(setJd);
+                    setToast({ message: "已粘贴", type: "success" });
+                  }}
+                  className="text-xs px-2 py-1 text-[#585858] hover:text-[#D97757] hover:bg-[#F3F3F2] rounded transition-colors"
+                >
+                  粘贴
+                </button>
+                <button
+                  onClick={() => setJd("")}
+                  className="text-xs px-2 py-1 text-[#585858] hover:text-[#C53030] hover:bg-[#F3F3F2] rounded transition-colors"
+                >
+                  清空
+                </button>
+              </div>
+            </div>
             <textarea
               value={jd}
               onChange={(e) => setJd(e.target.value)}
               placeholder="粘贴目标岗位的 JD 内容..."
-              className="w-full h-64 px-4 py-3 border dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none dark:bg-gray-700"
+              className="w-full h-64 px-4 py-3 border border-[#E8E8E6] dark:border-gray-700 rounded-md focus:outline-none focus:border-[#D97757] focus:ring-2 focus:ring-[#D97757]/20 resize-none bg-white dark:bg-gray-800 transition-all duration-200"
             />
-            <div className="flex justify-between items-center mt-2">
-              <p className="text-xs text-gray-500">
-                建议包含完整的职位描述、职责要求、技能要求等
-              </p>
-              <p className="text-xs text-gray-500">
-                {jd.length} / 10000 字符
-              </p>
+            <div className="flex justify-between mt-2 text-xs text-[#9A9A9A]">
+              <span>建议包含完整的职位描述、职责要求、技能要求等</span>
+              <span>{jd.length} / 10000</span>
             </div>
           </div>
 
-          {/* 简历输入框 */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              你的简历内容
-            </label>
+          {/* Resume Input */}
+          <div
+            className={`bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-[#E8E8E6] dark:border-gray-700 transition-all duration-300 animate-slide-up`}
+            style={{ animationDelay: "100ms" }}
+          >
+            <div className="flex justify-between items-center mb-3">
+              <label className="block text-sm font-medium text-[#1A1A1A] dark:text-white">
+                你的简历内容
+              </label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.readText().then(setResume);
+                    setToast({ message: "已粘贴", type: "success" });
+                  }}
+                  className="text-xs px-2 py-1 text-[#585858] hover:text-[#D97757] hover:bg-[#F3F3F2] rounded transition-colors"
+                >
+                  粘贴
+                </button>
+                <button
+                  onClick={() => setResume("")}
+                  className="text-xs px-2 py-1 text-[#585858] hover:text-[#C53030] hover:bg-[#F3F3F2] rounded transition-colors"
+                >
+                  清空
+                </button>
+              </div>
+            </div>
             <textarea
               value={resume}
               onChange={(e) => setResume(e.target.value)}
               placeholder="粘贴你的简历内容..."
-              className="w-full h-64 px-4 py-3 border dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none dark:bg-gray-700"
+              className="w-full h-64 px-4 py-3 border border-[#E8E8E6] dark:border-gray-700 rounded-md focus:outline-none focus:border-[#D97757] focus:ring-2 focus:ring-[#D97757]/20 resize-none bg-white dark:bg-gray-800 transition-all duration-200"
             />
-            <div className="flex justify-between items-center mt-2">
-              <p className="text-xs text-gray-500">
-                建议包含个人总结、工作经历、项目经验、技能等完整内容
-              </p>
-              <p className="text-xs text-gray-500">
-                {resume.length} / 10000 字符
-              </p>
+            <div className="flex justify-between mt-2 text-xs text-[#9A9A9A]">
+              <span>建议包含个人总结、工作经历、项目经验、技能等完整内容</span>
+              <span>{resume.length} / 10000</span>
             </div>
           </div>
         </div>
 
-        {/* 错误提示 */}
+        {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-            <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+          <div className="mb-6 p-4 bg-[#C53030]/10 border border-[#C53030] rounded-md animate-shake">
+            <p className="text-[#C53030] text-sm">{error}</p>
           </div>
         )}
 
-        {/* 分析按钮 */}
-        <div className="flex justify-center mb-8">
+        {/* Analyze Button */}
+        <div className="flex justify-center mb-8 animate-scale-in" style={{ animationDelay: "200ms" }}>
           <button
             onClick={handleAnalyze}
             disabled={isLoading}
-            className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
+            className={`flex items-center gap-2 px-8 py-3 bg-[#D97757] text-white rounded-lg hover:bg-[#C26647] disabled:bg-[#9A9A9A] disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg ${
+              !isLoading ? "hover:scale-105 active:scale-95" : ""
+            }`}
           >
-            <Sparkles className="w-5 h-5" />
+            <Sparkles className={`w-5 h-5 ${!isLoading ? "animate-pulse" : ""}`} />
             <span>{isLoading ? "分析中..." : "开始分析"}</span>
           </button>
         </div>
 
-        {/* 加载状态 */}
-        {isLoading && !result && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-            <div className="space-y-4 animate-pulse">
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
-              <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded mt-6"></div>
-            </div>
+        {/* Results */}
+        {isLoading && <LoadingSkeleton />}
+
+        {result && !isLoading && (
+          <div className="animate-fade-in">
+            <Tabs tabs={tabs} defaultTab="overview">
+              {(activeTab) => (
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 border border-[#E8E8E6] dark:border-gray-700">
+                  <div className="prose prose-blue dark:prose-invert max-w-none">
+                    <ReactMarkdown>{result}</ReactMarkdown>
+                  </div>
+                </div>
+              )}
+            </Tabs>
           </div>
         )}
 
-        {/* 结果展示 */}
-        {result && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 pb-4 border-b dark:border-gray-700">
-              分析结果
-            </h2>
-            <div className="prose prose-blue dark:prose-invert max-w-none">
-              <ReactMarkdown>{result}</ReactMarkdown>
-            </div>
-          </div>
+        {/* Toast */}
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
         )}
       </div>
     </div>
