@@ -287,17 +287,40 @@ export default function Home() {
 
         {result && !isLoading && (
           <div className="animate-fade-in">
-            <Tabs tabs={tabs} defaultTab="overview">
+            <Tabs
+              tabs={tabs}
+              defaultTab="overview"
+              onChange={(tabId) => setActiveTab(tabId)}
+            >
               {(activeTab) => (
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 border border-claude-border dark:border-gray-700">
-                  <div className="prose prose-blue dark:prose-invert max-w-none">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      rehypePlugins={[rehypeRaw]}
-                    >
-                      {result}
-                    </ReactMarkdown>
-                  </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 border border-claude-border dark:border-gray-700 relative">
+                  {/* 复制按钮 */}
+                  <button
+                    onClick={() => handleCopy(getTabContent(activeTab))}
+                    className="absolute top-4 right-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors group"
+                    title="复制内容"
+                  >
+                    <Copy className="w-5 h-5 text-claude-text-secondary group-hover:text-claude-orange transition-colors" />
+                  </button>
+
+                  {/* 内容区域 */}
+                  {activeTab === "icebreaker" && isIcebreakerLoading ? (
+                    <div className="text-center py-16">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-claude-orange mb-4"></div>
+                      <p className="text-claude-text-secondary dark:text-gray-400 text-sm">
+                        正在生成破冰文案...
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="prose prose-blue dark:prose-invert max-w-none pr-12">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw]}
+                      >
+                        {getTabContent(activeTab)}
+                      </ReactMarkdown>
+                    </div>
+                  )}
                 </div>
               )}
             </Tabs>
