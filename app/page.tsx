@@ -1,46 +1,53 @@
 "use client";
 
-import { useState } from "react";
-import { Sparkles, Download } from "lucide-react";
+import { Dispatch, SetStateAction, useMemo, useState } from "react";
+import { Sparkles, Download, Copy, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import rehypeRaw from "rehype-raw";
-import { ScoreCard } from "@/components/score-card";
 import { Tabs } from "@/components/tabs";
 import { AnalysisLoading } from "@/components/analysis-loading";
 import { Toast } from "@/components/toast";
-import { resumeAnalysisPrompt } from "@/lib/prompt";
+import { getTabContentById } from "@/lib/markdown-parser";
 
 export default function Home() {
   const [jd, setJd] = useState("");
   const [resume, setResume] = useState("");
   const [result, setResult] = useState("");
+  const [icebreakerText, setIcebreakerText] = useState("");
+  const [isIcebreakerLoading, setIsIcebreakerLoading] = useState(false);
+  const [icebreakerError, setIcebreakerError] = useState("");
+  const [copiedTabId, setCopiedTabId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error" | "info";
   } | null>(null);
+  const tabContent = useMemo(
+    () => ({
+      overview: getTabContentById(result, "overview"),
+      analysis: getTabContentById(result, "analysis"),
+      suggestions: getTabContentById(result, "suggestions"),
+      original: result.trim(),
+    }),
+    [result]
+  );
 
   const handleAnalyze = async () => {
-    console.log("handleAnalyze 被调用");
-    console.log("JD 长度:", jd.length, "简历长度:", resume.length);
-
     if (!jd.trim() || !resume.trim()) {
-      console.log("验证失败: JD 或简历为空");
       setError("请输入 JD 和简历内容");
       setToast({ message: "请输入 JD 和简历内容", type: "error" });
       return;
     }
 
-    console.log("开始加载...");
     setIsLoading(true);
     setError("");
     setResult("");
+    setIcebreakerText("");
+    setIcebreakerError("");
+    setIsIcebreakerLoading(false);
 
     try {
-      console.log("发送 API 请求...");
-      const prompt = resumeAnalysisPrompt(jd, resume);
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: {
@@ -49,23 +56,73 @@ export default function Home() {
         body: JSON.stringify({ jd, resume }),
       });
 
-      console.log("收到响应:", response.status);
       if (!response.ok) {
         throw new Error(`API 请求失败: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("数据长度:", data.content?.length);
-      setResult(data.content);
+      const analysisContent = typeof data.content === "string" ? data.content.trim() : "";
+      if (!analysisContent) {
+        throw new Error("分析结果为空,请重试");
+      }
+
+      setResult(analysisContent);
+
+      setIsIcebreakerLoading(true);
+      try {
+        const icebreakerResponse = await fetch("/api/icebreaker", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            jd,
+            resume,
+            analysis: analysisContent,
+          }),
+        });
+
+        if (!icebreakerResponse.ok) {
+          throw new Error(`破冰文案生成失败: ${icebreakerResponse.status}`);
+        }
+
+        const icebreakerData = await icebreakerResponse.json();
+        const content = typeof icebreakerData.content === "string" ? icebreakerData.content.trim() : "";
+
+        if (!content) {
+          setIcebreakerError("破冰文案暂未生成,你可以先使用原文内容投递。");
+        } else {
+          setIcebreakerText(content);
+        }
+      } catch (icebreakerRequestError) {
+        console.error("破冰文案生成失败:", icebreakerRequestError);
+        setIcebreakerError("破冰文案生成失败,不影响主分析结果。");
+      } finally {
+        setIsIcebreakerLoading(false);
+      }
+
       setToast({ message: "分析完成!", type: "success" });
     } catch (err) {
-      console.error("错误:", err);
       const errorMessage = err instanceof Error ? err.message : "分析失败,请重试";
       setError(errorMessage);
       setToast({ message: errorMessage, type: "error" });
     } finally {
-      console.log("请求完成");
       setIsLoading(false);
+    }
+  };
+
+  const handlePaste = async (setter: Dispatch<SetStateAction<string>>) => {
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      if (!clipboardText.trim()) {
+        setToast({ message: "剪贴板为空", type: "info" });
+        return;
+      }
+
+      setter(clipboardText);
+      setToast({ message: "已粘贴", type: "success" });
+    } catch {
+      setToast({ message: "无法读取剪贴板,请手动粘贴", type: "error" });
     }
   };
 
@@ -88,10 +145,62 @@ export default function Home() {
     setToast({ message: "导出成功!", type: "success" });
   };
 
+  const handleCopy = async (content: string, tabId: string) => {
+    if (!content.trim()) {
+      setToast({ message: "当前标签暂无可复制内容", type: "info" });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedTabId(tabId);
+      setToast({ message: "已复制到剪贴板", type: "success" });
+      window.setTimeout(() => {
+        setCopiedTabId((current) => (current === tabId ? null : current));
+      }, 1200);
+    } catch {
+      setToast({ message: "复制失败,请重试", type: "error" });
+    }
+  };
+
+  const getCurrentTabContent = (tabId: string): string => {
+    if (tabId === "icebreaker") {
+      if (icebreakerText.trim()) {
+        return icebreakerText;
+      }
+
+      if (icebreakerError.trim()) {
+        return `> ${icebreakerError}`;
+      }
+
+      return "";
+    }
+
+    if (tabId === "original") {
+      return tabContent.original || result;
+    }
+
+    if (tabId === "overview") {
+      return tabContent.overview || result;
+    }
+
+    if (tabId === "analysis") {
+      return tabContent.analysis || result;
+    }
+
+    if (tabId === "suggestions") {
+      return tabContent.suggestions || result;
+    }
+
+    return result;
+  };
+
   const tabs = [
     { id: "overview", label: "概览" },
     { id: "analysis", label: "详细分析" },
     { id: "suggestions", label: "优化建议" },
+    { id: "icebreaker", label: "HR 破冰" },
+    { id: "original", label: "原文" },
   ];
 
   return (
@@ -129,10 +238,7 @@ export default function Home() {
               </label>
               <div className="flex gap-2">
                 <button
-                  onClick={() => {
-                    navigator.clipboard.readText().then(setJd);
-                    setToast({ message: "已粘贴", type: "success" });
-                  }}
+                  onClick={() => void handlePaste(setJd)}
                   className="text-xs px-2 py-1 text-claude-text-secondary hover:text-claude-orange hover:bg-claude-surface-elevated rounded transition-colors"
                 >
                   粘贴
@@ -168,10 +274,7 @@ export default function Home() {
               </label>
               <div className="flex gap-2">
                 <button
-                  onClick={() => {
-                    navigator.clipboard.readText().then(setResume);
-                    setToast({ message: "已粘贴", type: "success" });
-                  }}
+                  onClick={() => void handlePaste(setResume)}
                   className="text-xs px-2 py-1 text-claude-text-secondary hover:text-claude-orange hover:bg-claude-surface-elevated rounded transition-colors"
                 >
                   粘贴
@@ -225,15 +328,34 @@ export default function Home() {
           <div className="animate-fade-in">
             <Tabs tabs={tabs} defaultTab="overview">
               {(activeTab) => (
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 border border-claude-border dark:border-gray-700">
-                  <div className="prose prose-blue dark:prose-invert max-w-none">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      rehypePlugins={[rehypeRaw]}
-                    >
-                      {result}
-                    </ReactMarkdown>
-                  </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 border border-claude-border dark:border-gray-700 relative">
+                  <button
+                    onClick={() => void handleCopy(getCurrentTabContent(activeTab), activeTab)}
+                    disabled={activeTab === "icebreaker" && isIcebreakerLoading}
+                    className="absolute top-4 right-4 p-2 rounded-md hover:bg-claude-surface-elevated disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+                    title="复制当前标签内容"
+                  >
+                    {copiedTabId === activeTab ? (
+                      <Check className="w-4 h-4 text-claude-success" />
+                    ) : (
+                      <Copy className="w-4 h-4 text-claude-text-secondary hover:text-claude-orange" />
+                    )}
+                  </button>
+
+                  {activeTab === "icebreaker" && isIcebreakerLoading ? (
+                    <div className="py-16 text-center">
+                      <div className="w-8 h-8 rounded-full border-2 border-claude-border border-t-claude-orange animate-spin mx-auto mb-4" />
+                      <p className="text-sm text-claude-text-secondary">
+                        正在生成 HR 破冰文案...
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="prose prose-blue dark:prose-invert max-w-none pr-10">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {getCurrentTabContent(activeTab) || "未识别到对应章节，已展示完整分析结果。"}
+                      </ReactMarkdown>
+                    </div>
+                  )}
                 </div>
               )}
             </Tabs>

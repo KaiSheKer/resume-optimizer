@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 interface Tab {
   id: string;
@@ -22,7 +22,7 @@ export function Tabs({ tabs, defaultTab, onChange, children }: TabsProps) {
   });
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  useEffect(() => {
+  const updateIndicator = useCallback(() => {
     const activeIndex = tabs.findIndex((tab) => tab.id === activeTab);
     const activeElement = tabRefs.current[activeIndex];
 
@@ -34,6 +34,15 @@ export function Tabs({ tabs, defaultTab, onChange, children }: TabsProps) {
     }
   }, [activeTab, tabs]);
 
+  useEffect(() => {
+    updateIndicator();
+  }, [updateIndicator]);
+
+  useEffect(() => {
+    window.addEventListener("resize", updateIndicator);
+    return () => window.removeEventListener("resize", updateIndicator);
+  }, [updateIndicator]);
+
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
     onChange?.(tabId);
@@ -43,13 +52,13 @@ export function Tabs({ tabs, defaultTab, onChange, children }: TabsProps) {
     <div className="w-full">
       {/* Tab Headers */}
       <div className="relative border-b border-claude-border dark:border-gray-700">
-        <div className="flex space-x-8">
+        <div className="flex space-x-8 overflow-x-auto">
           {tabs.map((tab, index) => (
             <button
               key={tab.id}
               ref={(el) => { tabRefs.current[index] = el; }}
               onClick={() => handleTabChange(tab.id)}
-              className={`relative pb-3 px-1 text-sm font-medium transition-colors duration-200 ${
+              className={`relative pb-3 px-1 text-sm font-medium whitespace-nowrap transition-colors duration-200 ${
                 activeTab === tab.id
                   ? "text-claude-text-primary dark:text-white"
                   : "text-claude-text-secondary dark:text-gray-400 hover:text-claude-text-primary dark:hover:text-white"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type ToastType = "success" | "error" | "info";
 
@@ -15,6 +15,13 @@ export function Toast({ message, type = "info", duration = 2000, onClose }: Toas
   const [isVisible, setIsVisible] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
+  const handleClose = useCallback(() => {
+    setIsExiting(true);
+    setTimeout(() => {
+      onClose?.();
+    }, 200);
+  }, [onClose]);
+
   useEffect(() => {
     // 入场动画
     setIsVisible(true);
@@ -25,14 +32,7 @@ export function Toast({ message, type = "info", duration = 2000, onClose }: Toas
     }, duration);
 
     return () => clearTimeout(timer);
-  }, [duration]);
-
-  const handleClose = () => {
-    setIsExiting(true);
-    setTimeout(() => {
-      onClose?.();
-    }, 200);
-  };
+  }, [duration, handleClose]);
 
   const getIcon = () => {
     switch (type) {

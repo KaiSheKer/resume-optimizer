@@ -22,13 +22,19 @@
 - ✅ Toast 提示和反馈
 - ✅ 优雅的加载进度动画
 - ✅ 分步骤展示分析进度
+- ✅ Tab 按 Markdown 标题快速定位
+- ✅ HR 破冰文案自动生成
+- ✅ 一键复制当前 Tab 内容
 
 ## 功能特性
 
 - 🎯 双输入框设计：JD + 简历内容
-- 🔒 本地存储：API Key 安全存储在 localStorage
+- 🔒 服务端安全：API Key 仅保存在服务端环境变量
 - 🤖 Kimi AI 驱动：专业的简历分析建议
 - 📝 Markdown 渲染：清晰的分析结果展示
+- 📑 Tab 分栏展示：概览、详细分析、优化建议、HR 破冰、原文
+- 📋 一键复制：快速复制当前 Tab 内容
+- 💬 HR 破冰文案：自动生成 100 字以内开场白
 - 📱 响应式设计：支持移动端访问
 
 ## 快速开始
@@ -43,7 +49,11 @@ npm install
 
 1. 访问 [platform.moonshot.cn](https://platform.moonshot.cn/console/api-keys)
 2. 创建 API Key
-3. 在应用中点击"配置 API Key"按钮输入
+3. 在项目根目录创建 `.env.local` 并写入：
+
+```bash
+KIMI_API_KEY=your_api_key_here
+```
 
 ### 运行开发服务器
 
@@ -78,5 +88,5 @@ npm start
 
 ## 注意事项
 
-- API Key 仅存储在浏览器本地，不会上传到服务器
+- API Key 只应保存在服务端环境变量中（如 `.env.local`、Vercel Environment Variables）
 - 请确保遵守 Kimi API 使用条款
