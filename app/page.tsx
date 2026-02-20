@@ -61,6 +61,35 @@ export default function Home() {
       const data = await response.json();
       console.log("数据长度:", data.content?.length);
       setResult(data.content);
+
+      // 生成 HR 破冰文案
+      setIsIcebreakerLoading(true);
+      try {
+        const icebreakerResponse = await fetch("/api/icebreaker", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            jd,
+            resume,
+            analysis: data.content,
+          }),
+        });
+
+        if (!icebreakerResponse.ok) {
+          throw new Error(`破冰文案生成失败: ${icebreakerResponse.status}`);
+        }
+
+        const icebreakerData = await icebreakerResponse.json();
+        setIcebreakerText(icebreakerData.content);
+      } catch (error) {
+        console.error("破冰文案生成失败:", error);
+        // 破冰文案生成失败不影响主流程,只记录错误
+      } finally {
+        setIsIcebreakerLoading(false);
+      }
+
       setToast({ message: "分析完成!", type: "success" });
     } catch (err) {
       console.error("错误:", err);
