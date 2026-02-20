@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Download } from "lucide-react";
+import { Sparkles, Download, Copy } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
@@ -10,6 +10,7 @@ import { Tabs } from "@/components/tabs";
 import { AnalysisLoading } from "@/components/analysis-loading";
 import { Toast } from "@/components/toast";
 import { resumeAnalysisPrompt } from "@/lib/prompt";
+import { parseMarkdownSections, getTabMapping } from "@/lib/markdown-parser";
 
 export default function Home() {
   const [jd, setJd] = useState("");
@@ -21,6 +22,9 @@ export default function Home() {
     message: string;
     type: "success" | "error" | "info";
   } | null>(null);
+  const [icebreakerText, setIcebreakerText] = useState("");
+  const [isIcebreakerLoading, setIsIcebreakerLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
 
   const handleAnalyze = async () => {
     console.log("handleAnalyze 被调用");
@@ -88,10 +92,41 @@ export default function Home() {
     setToast({ message: "导出成功!", type: "success" });
   };
 
+  const getTabContent = (tabId: string): string => {
+    // HR 破冰 Tab
+    if (tabId === "icebreaker") {
+      return icebreakerText;
+    }
+
+    // 原文 Tab
+    if (tabId === "original") {
+      return result;
+    }
+
+    // 其他 Tab:解析对应章节
+    const sections = parseMarkdownSections(result);
+    const sectionTitle = getTabMapping(tabId);
+
+    // 如果找到对应章节,返回章节内容;否则返回完整内容
+    return sections[sectionTitle] || result;
+  };
+
+  const handleCopy = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setToast({ message: "已复制到剪贴板", type: "success" });
+    } catch (error) {
+      console.error("复制失败:", error);
+      setToast({ message: "复制失败,请重试", type: "error" });
+    }
+  };
+
   const tabs = [
     { id: "overview", label: "概览" },
     { id: "analysis", label: "详细分析" },
     { id: "suggestions", label: "优化建议" },
+    { id: "icebreaker", label: "HR 破冰" },
+    { id: "original", label: "原文" }
   ];
 
   return (
