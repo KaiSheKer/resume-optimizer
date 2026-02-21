@@ -90,3 +90,13 @@ npm start
 
 - API Key 只应保存在服务端环境变量中（如 `.env.local`、Vercel Environment Variables）
 - 请确保遵守 Kimi API 使用条款
+
+## Vercel 环境变量配置
+
+在 Vercel 项目设置中添加:
+
+```env
+KIMI_API_KEY=your_kimi_api_key_here
+```
+
+`KIMI_API_KEY` 仅应保存在服务端环境变量,不要在客户端暴露。
