@@ -7,6 +7,7 @@ import { Tabs } from "@/components/tabs";
 import {
   MockInterviewRoleId,
   getMockInterviewRoleContent,
+  getMockInterviewRoleLabel,
 } from "@/lib/markdown-parser";
 
 const ROLE_TABS: Array<{ id: MockInterviewRoleId; label: string }> = [
@@ -18,6 +19,7 @@ const ROLE_TABS: Array<{ id: MockInterviewRoleId; label: string }> = [
 interface MockInterviewPanelProps {
   content: string;
   isLoading: boolean;
+  loadingRoleId: MockInterviewRoleId | null;
   error: string;
   hasStarted: boolean;
   copiedRoleId: MockInterviewRoleId | null;
@@ -29,6 +31,7 @@ interface MockInterviewPanelProps {
 export function MockInterviewPanel({
   content,
   isLoading,
+  loadingRoleId,
   error,
   hasStarted,
   copiedRoleId,
@@ -61,20 +64,22 @@ export function MockInterviewPanel({
     );
   }
 
-  if (isLoading) {
+  if (isLoading && !content.trim()) {
     return (
       <div className="rounded-lg border border-claude-border bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800">
         <div className="py-16 text-center">
           <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-claude-border border-t-claude-orange" />
           <p className="text-sm text-claude-text-secondary dark:text-gray-400">
-            正在生成直属上级 / 高级 VP / HRD 视角问题...
+            正在优先生成
+            {loadingRoleId ? ` ${getMockInterviewRoleLabel(loadingRoleId)} ` : " 模拟面试 "}
+            视角问题...
           </p>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error && !content.trim()) {
     return (
       <div className="rounded-lg border border-claude-danger/40 bg-white p-8 shadow-lg dark:bg-gray-800">
         <div className="mx-auto max-w-2xl text-center">
@@ -97,6 +102,19 @@ export function MockInterviewPanel({
 
   return (
     <div className="rounded-lg border border-claude-border bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+      {(isLoading || error) && (
+        <div
+          className={`mb-6 rounded-lg border px-4 py-3 text-sm ${
+            error
+              ? "border-claude-danger/40 bg-claude-danger/10 text-claude-danger"
+              : "border-claude-border bg-claude-surface-elevated text-claude-text-secondary dark:border-gray-700 dark:text-gray-300"
+          }`}
+        >
+          {error
+            ? error
+            : `已生成可用内容，继续生成 ${loadingRoleId ? getMockInterviewRoleLabel(loadingRoleId) : "剩余角色"}...`}
+        </div>
+      )}
       <Tabs tabs={ROLE_TABS} defaultTab="manager">
         {(activeRoleTab) => {
           const roleId = activeRoleTab as MockInterviewRoleId;
@@ -116,11 +134,27 @@ export function MockInterviewPanel({
                 )}
               </button>
 
-              <div className="prose prose-blue max-w-none pr-10 dark:prose-invert">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {roleContent || "未识别到该角色内容，请重新生成。"}
-                </ReactMarkdown>
-              </div>
+              {roleContent ? (
+                <div className="prose prose-blue max-w-none pr-10 dark:prose-invert">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {roleContent}
+                  </ReactMarkdown>
+                </div>
+              ) : isLoading ? (
+                <div className="rounded-lg border border-dashed border-claude-border px-6 py-10 text-center text-sm text-claude-text-secondary dark:border-gray-700 dark:text-gray-400">
+                  {loadingRoleId === roleId
+                    ? `正在生成 ${getMockInterviewRoleLabel(roleId)} 视角内容...`
+                    : `${getMockInterviewRoleLabel(roleId)} 视角排队生成中...`}
+                </div>
+              ) : error ? (
+                <div className="rounded-lg border border-claude-danger/40 bg-claude-danger/10 px-6 py-10 text-center text-sm text-claude-danger">
+                  当前角色内容生成失败，请点击重新生成。
+                </div>
+              ) : (
+                <div className="rounded-lg border border-dashed border-claude-border px-6 py-10 text-center text-sm text-claude-text-secondary dark:border-gray-700 dark:text-gray-400">
+                  未识别到该角色内容，请重新生成。
+                </div>
+              )}
             </div>
           );
         }}

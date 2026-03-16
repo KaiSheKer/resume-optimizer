@@ -7,6 +7,7 @@ export const panelUsage = (
   <MockInterviewPanel
     content="# 模拟面试"
     isLoading={false}
+    loadingRoleId={null}
     error=""
     hasStarted={false}
     copiedRoleId={copiedRoleId}

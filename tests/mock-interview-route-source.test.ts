@@ -14,4 +14,6 @@ test("mock interview route uses model settings accepted by kimi-k2.5", async () 
 
   assert.match(source, /model:\s*"kimi-k2\.5"/);
   assert.doesNotMatch(source, /temperature:/);
+  assert.match(source, /roleId/);
+  assert.match(source, /mockInterviewRolePrompt/);
 });

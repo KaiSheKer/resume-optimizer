@@ -28,3 +28,24 @@ test("mockInterviewPrompt builds the required role-oriented markdown template", 
   assert.match(prompt, /简历内容：\n简历 示例/);
   assert.match(prompt, /分析结果：\n分析 示例/);
 });
+
+test("mockInterviewRolePrompt builds a single-role markdown section", () => {
+  const promptBuilder = (prompts as { mockInterviewRolePrompt?: unknown }).mockInterviewRolePrompt;
+
+  assert.equal(typeof promptBuilder, "function");
+
+  const prompt = (
+    promptBuilder as (
+      jd: string,
+      resume: string,
+      analysis: string,
+      roleLabel: string,
+      roleFocus: string
+    ) => string
+  )("JD 示例", "简历 示例", "分析 示例", "直属上级", "聚焦执行能力、项目细节");
+
+  assert.match(prompt, /只生成一个角色的模拟面试内容/);
+  assert.match(prompt, /二级标题必须严格为：## 直属上级/);
+  assert.doesNotMatch(prompt, /## 高级 VP/);
+  assert.doesNotMatch(prompt, /## HRD/);
+});

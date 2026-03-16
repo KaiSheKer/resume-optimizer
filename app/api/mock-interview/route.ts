@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { mockInterviewPrompt } from "@/lib/prompt";
+import { getMockInterviewRoleLabel, type MockInterviewRoleId } from "@/lib/markdown-parser";
+import { mockInterviewPrompt, mockInterviewRolePrompt } from "@/lib/prompt";
+
+const ROLE_FOCUS_MAPPING: Record<MockInterviewRoleId, string> = {
+  manager: "聚焦执行能力、项目细节、跨团队协作、优先级取舍、结果真实性",
+  vp: "聚焦业务判断、战略理解、目标拆解、影响力、组织视角",
+  hrd: "聚焦动机、稳定性、文化适配、风险点、职业路径一致性",
+};
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { jd, resume, analysis } = body;
+    const { jd, resume, analysis, roleId } = body;
 
     if (!jd || typeof jd !== "string") {
       return NextResponse.json(
@@ -36,7 +43,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const prompt = mockInterviewPrompt(jd, resume, analysis);
+    if (roleId && !(roleId in ROLE_FOCUS_MAPPING)) {
+      return NextResponse.json(
+        { error: "缺少或无效的角色参数" },
+        { status: 400 }
+      );
+    }
+
+    const normalizedRoleId = roleId as MockInterviewRoleId | undefined;
+    const prompt = normalizedRoleId
+      ? mockInterviewRolePrompt(
+          jd,
+          resume,
+          analysis,
+          getMockInterviewRoleLabel(normalizedRoleId),
+          ROLE_FOCUS_MAPPING[normalizedRoleId]
+        )
+      : mockInterviewPrompt(jd, resume, analysis);
     const response = await fetch("https://api.moonshot.cn/v1/chat/completions", {
       method: "POST",
       headers: {

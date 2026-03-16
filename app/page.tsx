@@ -1,6 +1,6 @@
 "use client";
 
-import { Dispatch, SetStateAction, useMemo, useState } from "react";
+import { Dispatch, SetStateAction, useMemo, useRef, useState } from "react";
 import { Sparkles, Download, Copy, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -10,6 +10,17 @@ import { Tabs } from "@/components/tabs";
 import { Toast } from "@/components/toast";
 import { getTabContentById, type MockInterviewRoleId } from "@/lib/markdown-parser";
 
+const MOCK_INTERVIEW_ROLE_SEQUENCE: MockInterviewRoleId[] = ["manager", "vp", "hrd"];
+
+function composeMockInterviewMarkdown(
+  sections: Partial<Record<MockInterviewRoleId, string>>
+): string {
+  const orderedSections = MOCK_INTERVIEW_ROLE_SEQUENCE.map((roleId) => sections[roleId]?.trim())
+    .filter((section): section is string => Boolean(section));
+
+  return orderedSections.length > 0 ? ["# 模拟面试", ...orderedSections].join("\n\n") : "";
+}
+
 export default function Home() {
   const [jd, setJd] = useState("");
   const [resume, setResume] = useState("");
@@ -17,8 +28,12 @@ export default function Home() {
   const [icebreakerText, setIcebreakerText] = useState("");
   const [isIcebreakerLoading, setIsIcebreakerLoading] = useState(false);
   const [icebreakerError, setIcebreakerError] = useState("");
-  const [mockInterviewContent, setMockInterviewContent] = useState("");
+  const [mockInterviewSections, setMockInterviewSections] = useState<
+    Partial<Record<MockInterviewRoleId, string>>
+  >({});
   const [isMockInterviewLoading, setIsMockInterviewLoading] = useState(false);
+  const [mockInterviewLoadingRoleId, setMockInterviewLoadingRoleId] =
+    useState<MockInterviewRoleId | null>(null);
   const [mockInterviewError, setMockInterviewError] = useState("");
   const [hasMockInterviewStarted, setHasMockInterviewStarted] = useState(false);
   const [copiedMockInterviewRoleId, setCopiedMockInterviewRoleId] =
@@ -30,6 +45,8 @@ export default function Home() {
     message: string;
     type: "success" | "error" | "info";
   } | null>(null);
+  const mockInterviewRunIdRef = useRef(0);
+
   const tabContent = useMemo(
     () => ({
       overview: getTabContentById(result, "overview"),
@@ -40,10 +57,17 @@ export default function Home() {
     [result]
   );
 
+  const mockInterviewContent = useMemo(
+    () => composeMockInterviewMarkdown(mockInterviewSections),
+    [mockInterviewSections]
+  );
+
   const resetMockInterviewState = () => {
-    setMockInterviewContent("");
+    mockInterviewRunIdRef.current += 1;
+    setMockInterviewSections({});
     setMockInterviewError("");
     setIsMockInterviewLoading(false);
+    setMockInterviewLoadingRoleId(null);
     setHasMockInterviewStarted(false);
     setCopiedMockInterviewRoleId(null);
   };
@@ -149,45 +173,71 @@ export default function Home() {
       return;
     }
 
+    const runId = mockInterviewRunIdRef.current + 1;
+    mockInterviewRunIdRef.current = runId;
+
     setHasMockInterviewStarted(true);
     setIsMockInterviewLoading(true);
+    setMockInterviewLoadingRoleId(MOCK_INTERVIEW_ROLE_SEQUENCE[0] ?? null);
     setMockInterviewError("");
-    setMockInterviewContent("");
+    setMockInterviewSections({});
     setCopiedMockInterviewRoleId(null);
 
     try {
-      const response = await fetch("/api/mock-interview", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          jd,
-          resume,
-          analysis: result,
-        }),
-      });
+      for (const roleId of MOCK_INTERVIEW_ROLE_SEQUENCE) {
+        setMockInterviewLoadingRoleId(roleId);
 
-      if (!response.ok) {
-        const errorPayload = await response.json().catch(() => ({}));
-        throw new Error(errorPayload.error || `模拟面试生成失败: ${response.status}`);
+        const response = await fetch("/api/mock-interview", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            jd,
+            resume,
+            analysis: result,
+            roleId,
+          }),
+        });
+
+        if (mockInterviewRunIdRef.current !== runId) {
+          return;
+        }
+
+        if (!response.ok) {
+          const errorPayload = await response.json().catch(() => ({}));
+          throw new Error(errorPayload.error || `模拟面试生成失败: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const content = typeof data.content === "string" ? data.content.trim() : "";
+
+        if (!content) {
+          throw new Error("模拟面试内容为空，请重试");
+        }
+
+        setMockInterviewSections((current) => ({
+          ...current,
+          [roleId]: content,
+        }));
       }
 
-      const data = await response.json();
-      const content = typeof data.content === "string" ? data.content.trim() : "";
-
-      if (!content) {
-        throw new Error("模拟面试内容为空，请重试");
+      if (mockInterviewRunIdRef.current === runId) {
+        setToast({ message: "模拟面试已全部生成", type: "success" });
       }
-
-      setMockInterviewContent(content);
-      setToast({ message: "模拟面试已生成", type: "success" });
     } catch (err) {
+      if (mockInterviewRunIdRef.current !== runId) {
+        return;
+      }
+
       const errorMessage = err instanceof Error ? err.message : "模拟面试生成失败，请重试";
       setMockInterviewError(errorMessage);
       setToast({ message: errorMessage, type: "error" });
     } finally {
-      setIsMockInterviewLoading(false);
+      if (mockInterviewRunIdRef.current === runId) {
+        setIsMockInterviewLoading(false);
+        setMockInterviewLoadingRoleId(null);
+      }
     }
   };
 
@@ -431,6 +481,7 @@ export default function Home() {
                   <MockInterviewPanel
                     content={mockInterviewContent}
                     isLoading={isMockInterviewLoading}
+                    loadingRoleId={mockInterviewLoadingRoleId}
                     error={mockInterviewError}
                     hasStarted={hasMockInterviewStarted}
                     copiedRoleId={copiedMockInterviewRoleId}

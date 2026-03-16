@@ -13,4 +13,7 @@ test("results page wires a dedicated mock interview tab and panel", async () => 
   assert.match(source, /handleStartMockInterview/);
   assert.match(source, /resetMockInterviewState/);
   assert.match(source, /mockInterview/);
+  assert.match(source, /MOCK_INTERVIEW_ROLE_SEQUENCE/);
+  assert.match(source, /mockInterviewLoadingRoleId/);
+  assert.match(source, /for \(const roleId of MOCK_INTERVIEW_ROLE_SEQUENCE\)/);
 });
