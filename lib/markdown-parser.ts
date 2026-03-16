@@ -1,4 +1,5 @@
 export type BaseTabId = "overview" | "analysis" | "suggestions";
+export type MockInterviewRoleId = "manager" | "vp" | "hrd";
 
 interface ParsedSection {
   heading: string;
@@ -9,6 +10,12 @@ const TAB_MAPPING: Record<BaseTabId, string> = {
   overview: "概览",
   analysis: "详细分析",
   suggestions: "优化建议",
+};
+
+const MOCK_INTERVIEW_ROLE_MAPPING: Record<MockInterviewRoleId, string> = {
+  manager: "直属上级",
+  vp: "高级 VP",
+  hrd: "HRD",
 };
 
 const TAB_KEYWORDS: Record<BaseTabId, RegExp[]> = {
@@ -153,4 +160,28 @@ export function getTabContentById(markdown: string, tabId: BaseTabId): string {
   }
 
   return text;
+}
+
+export function getMockInterviewRoleLabel(roleId: MockInterviewRoleId): string {
+  return MOCK_INTERVIEW_ROLE_MAPPING[roleId];
+}
+
+export function getMockInterviewRoleContent(markdown: string, roleId: MockInterviewRoleId): string {
+  const text = markdown.trim();
+  if (!text) {
+    return "";
+  }
+
+  const roleSections = splitSectionsAtHeadingLevel(text, 2);
+  if (roleSections.length === 0) {
+    return text;
+  }
+
+  const targetTitle = getMockInterviewRoleLabel(roleId);
+  const exactSection = findExactSection(roleSections, targetTitle);
+  if (exactSection) {
+    return exactSection.fullText;
+  }
+
+  return "";
 }

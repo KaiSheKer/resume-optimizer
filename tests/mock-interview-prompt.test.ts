@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
+import { resolve, dirname } from "node:path";
 import test from "node:test";
-import * as prompts from "../lib/prompt.ts";
+import { fileURLToPath, pathToFileURL } from "node:url";
+
+const promptModuleUrl = pathToFileURL(
+  resolve(dirname(fileURLToPath(import.meta.url)), "../lib/prompt.ts")
+).href;
+const prompts = await import(promptModuleUrl);
 
 test("mockInterviewPrompt builds the required role-oriented markdown template", () => {
   const promptBuilder = (prompts as { mockInterviewPrompt?: unknown }).mockInterviewPrompt;
