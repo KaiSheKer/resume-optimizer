@@ -97,7 +97,8 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        throw new Error(`API 请求失败: ${response.status}`);
+        const errorPayload = await response.json().catch(() => ({}));
+        throw new Error(errorPayload.error || `API 请求失败: ${response.status}`);
       }
 
       const data = await response.json();

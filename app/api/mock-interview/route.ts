@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getKimiErrorMessage } from "@/lib/kimi-error";
 import { getMockInterviewRoleLabel, type MockInterviewRoleId } from "@/lib/markdown-parser";
 import { mockInterviewPrompt, mockInterviewRolePrompt } from "@/lib/prompt";
 
@@ -88,9 +89,7 @@ export async function POST(request: NextRequest) {
       console.error("Kimi API 错误:", errorData);
       return NextResponse.json(
         {
-          error:
-            errorData.error?.message ||
-            `API 请求失败: ${response.status} ${response.statusText}`,
+          error: getKimiErrorMessage(response.status, errorData.error?.message),
         },
         { status: response.status }
       );

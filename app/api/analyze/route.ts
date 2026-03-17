@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getKimiErrorMessage } from "@/lib/kimi-error";
 import { resumeAnalysisPrompt } from "@/lib/prompt";
 
 export async function POST(request: NextRequest) {
@@ -52,7 +53,6 @@ export async function POST(request: NextRequest) {
             content: prompt,
           },
         ],
-        temperature: 1,
         stream: false,
       }),
     });
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       console.error("Kimi API 错误:", errorData);
       return NextResponse.json(
         {
-          error: errorData.error?.message || `API 请求失败: ${response.status} ${response.statusText}`,
+          error: getKimiErrorMessage(response.status, errorData.error?.message),
         },
         { status: response.status }
       );
